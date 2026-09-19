@@ -12,6 +12,11 @@ A code-based, API-driven competitive intelligence dashboard:
 - Everything is plain code (Python + SQL), version-controlled, no no-code
   tools.
 
+> **Deploying?** This is a Streamlit app, not a static site - it will 404 on
+> Netlify/Vercel-static/GitHub Pages. See [DEPLOYMENT.md](DEPLOYMENT.md) for
+> hosts that actually work (Streamlit Community Cloud is the free,
+> zero-config option).
+
 ## What it does
 
 | Page | What it shows | Data source |
@@ -133,10 +138,16 @@ changes needed elsewhere, SQLAlchemy handles both.
 
 ### 7. Deploy the dashboard
 
-Any host that can run Streamlit works (Streamlit Community Cloud, a small
-VM, etc.) - point it at the same `DATABASE_URL` the Action writes to. The
-dashboard itself makes no outbound API calls at view-time, so it's cheap to
-host and safe to share internally.
+**Do not use Netlify, Vercel's static tier, GitHub Pages, or any other
+static-site host** - this is a Streamlit app, which needs a persistent
+Python server, not a static file bundle. Those hosts will show a generic
+404 because there's nothing static for them to serve.
+
+See **[DEPLOYMENT.md](DEPLOYMENT.md)** for step-by-step instructions for
+Streamlit Community Cloud (recommended, free, zero config files), Render
+(a `render.yaml` blueprint is included), or a self-hosted VM. All three
+connect to this GitHub repo the same way Netlify does (push to deploy) -
+they just actually run Python.
 
 ## Project layout
 

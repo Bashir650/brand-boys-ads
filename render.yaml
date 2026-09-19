@@ -1,0 +1,27 @@
+# Render Blueprint - see DEPLOYMENT.md "Option B" for setup steps.
+# Render dashboard -> New -> Blueprint -> point at this repo/branch.
+services:
+  - type: web
+    name: brand-boys-ads-dashboard
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: streamlit run dashboard/app.py --server.port $PORT --server.address 0.0.0.0
+    envVars:
+      - key: DATABASE_URL
+        value: sqlite:///data/ads.db
+      - key: AD_LIBRARY_COUNTRIES
+        value: IN,US
+      - key: ENABLE_TIKTOK_COLLECTOR
+        value: "true"
+      # Secrets below are intentionally left out of this file (sync: false) -
+      # Render will prompt you to fill them in via its own dashboard instead
+      # of storing them in git. Never hardcode real values here.
+      - key: META_APP_ID
+        sync: false
+      - key: META_APP_SECRET
+        sync: false
+      - key: META_ACCESS_TOKEN
+        sync: false
+      - key: META_AD_ACCOUNT_ID
+        sync: false
