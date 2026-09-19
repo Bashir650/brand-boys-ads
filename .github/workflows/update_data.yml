@@ -1,0 +1,43 @@
+name: Update ads data
+
+on:
+  schedule:
+    - cron: "0 3 * * *" # daily at 03:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  pull-and-analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run data pipeline (API calls only - no LLM/chat tokens used)
+        env:
+          META_APP_ID: ${{ secrets.META_APP_ID }}
+          META_APP_SECRET: ${{ secrets.META_APP_SECRET }}
+          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+          META_AD_ACCOUNT_ID: ${{ secrets.META_AD_ACCOUNT_ID }}
+          AD_LIBRARY_COUNTRIES: ${{ vars.AD_LIBRARY_COUNTRIES || 'IN,US' }}
+          ENABLE_TIKTOK_COLLECTOR: ${{ vars.ENABLE_TIKTOK_COLLECTOR || 'true' }}
+          DATABASE_URL: sqlite:///data/ads.db
+        run: |
+          mkdir -p data
+          python -m src.pipeline
+
+      - name: Commit updated data
+        run: |
+          git config user.name "brand-boys-ads-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -f data/ads.db
+          git diff --cached --quiet || git commit -m "chore: scheduled ads data refresh"
+          git push

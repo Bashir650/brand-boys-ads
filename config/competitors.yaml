@@ -1,0 +1,28 @@
+# Add one entry per competitor / prospect brand you want to track, plus one
+# entry for your own brand (is_own_brand: true) so the pipeline knows which
+# row to skip for competitor scraping.
+#
+# meta_page_id: numeric Facebook Page ID. Find it via Graph API Explorer:
+#   GET /<page-username>?fields=id  (or view page source, search "page_id")
+# meta_search_terms: free-text fallback search used against the Ad Library
+#   when you don't have the exact page ID yet.
+# tiktok_handle: the @handle used to search TikTok's Creative Center (no @).
+# notes: free text - e.g. "direct competitor" vs "prospect client, big ad spend"
+#   (the same collectors double as lead-gen: any brand running lots of ads for
+#   months in the Ad Library is spending real budget and is a warm lead).
+competitors:
+  - name: "Example Competitor 1"
+    meta_page_id: ""
+    meta_search_terms: "Example Competitor 1"
+    tiktok_handle: ""
+    country: "IN"
+    is_own_brand: false
+    notes: "direct competitor"
+
+  - name: "Our Brand"
+    meta_page_id: ""
+    meta_search_terms: ""
+    tiktok_handle: ""
+    country: "IN"
+    is_own_brand: true
+    notes: "own brand - performance pulled via Marketing API, not Ad Library"
