@@ -6,12 +6,18 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import pandas as pd
 import streamlit as st
 
+from src.db.base import Base, engine
 from src.db.models import Competitor, MetaAd, OwnAdInsight, Prediction, TikTokAd, WinningCreativeScore
 from src.db.session import get_session
 
 
 @st.cache_resource
 def db_session():
+    # On a fresh deploy (e.g. Streamlit Cloud before the pipeline has ever run),
+    # data/ads.db exists with no schema yet - create any missing tables so the
+    # dashboard shows empty-state messages instead of crashing. No-op once the
+    # pipeline (or scripts/init_db.py) has already created them.
+    Base.metadata.create_all(engine)
     return get_session()
 
 

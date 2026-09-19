@@ -68,6 +68,14 @@ A `.python-version` file is included in this repo so Streamlit Cloud (and
 Render) builds with the same Python version (3.11) this project was tested
 against.
 
+**First boot, before the pipeline has ever run**: the dashboard creates its
+own (empty) database tables on startup if they don't exist yet, so a brand
+new deploy shows "no data yet" messages instead of crashing - it doesn't
+need `scripts/init_db.py` to have been run first. Once the GitHub Action
+runs (nightly, or trigger it manually via **Actions -> Update ads data ->
+Run workflow** to not wait for 3am UTC) and commits real data, the next
+reboot picks it up.
+
 ## Option B: Render (Web Service)
 
 Use this if you want a stable custom domain or don't want to depend on
