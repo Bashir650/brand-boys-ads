@@ -15,6 +15,9 @@ import pytest
 from streamlit.testing.v1 import AppTest
 
 from src.config import BASE_DIR
+from src.db.base import Base, engine
+from src.db.models import Competitor
+from src.db.session import get_session
 
 DB_PATH = BASE_DIR / "data" / "ads.db"
 # AppTest.from_file resolves relative paths against this test file's own
@@ -46,3 +49,25 @@ def test_page_does_not_crash_on_empty_database(page_file):
     at = AppTest.from_file(page_file, default_timeout=30)
     at.run()
     assert not at.exception, f"{page_file} raised: {[e.value for e in at.exception]}"
+
+
+def test_competitor_ads_library_with_competitors_but_no_ads_yet():
+    """Reproduces the exact reported bug: competitors exist (the pipeline's
+    ensure_competitors_synced always runs), but the meta_ads/tiktok_ads
+    tables are still empty (e.g. the scheduled Action ran before a Meta
+    access token was configured). pd.DataFrame([]) has zero columns, so code
+    indexing df["competitor_id"] raised KeyError before dashboard/utils.py
+    started passing `columns=` explicitly."""
+    Base.metadata.create_all(engine)
+    session = get_session()
+    session.add(
+        Competitor(name="Example Competitor 1", meta_search_terms="Example Competitor 1", is_own_brand=False)
+    )
+    session.add(Competitor(name="Our Brand", is_own_brand=True))
+    session.commit()
+    session.close()
+
+    for page in ["1_Competitor_Ads_Library.py", "2_Winning_Creatives_and_Dupes.py"]:
+        at = AppTest.from_file(str(BASE_DIR / "dashboard" / "pages" / page), default_timeout=30)
+        at.run()
+        assert not at.exception, f"{page} raised: {[e.value for e in at.exception]}"

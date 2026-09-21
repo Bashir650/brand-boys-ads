@@ -21,12 +21,71 @@ def db_session():
     return get_session()
 
 
+def _rows_to_df(rows: list[dict], columns: list[str]) -> pd.DataFrame:
+    """pd.DataFrame([]) has zero columns, so code that indexes an expected
+    column (e.g. df["competitor_id"]) raises KeyError on an empty table -
+    which is a completely normal state (before the pipeline has run, or for
+    a competitor with no ads yet). Passing `columns` explicitly guarantees
+    they exist even with zero rows."""
+    return pd.DataFrame(rows, columns=columns)
+
+
+COMPETITOR_COLUMNS = ["id", "name", "country", "is_own_brand", "notes"]
+META_AD_COLUMNS = [
+    "id",
+    "competitor_id",
+    "page_name",
+    "ad_creative_body",
+    "ad_snapshot_url",
+    "publisher_platforms",
+    "ad_delivery_start_time",
+    "ad_delivery_stop_time",
+    "last_seen_at",
+]
+TIKTOK_AD_COLUMNS = [
+    "id",
+    "competitor_id",
+    "brand_name",
+    "caption",
+    "video_url",
+    "thumbnail_url",
+    "likes",
+    "comments",
+    "shares",
+    "last_seen_at",
+]
+OWN_INSIGHT_COLUMNS = [
+    "date",
+    "campaign_name",
+    "adset_name",
+    "ad_name",
+    "spend",
+    "impressions",
+    "clicks",
+    "ctr",
+    "cpc",
+    "cpm",
+    "roas",
+]
+PREDICTION_COLUMNS = ["metric_name", "forecast_date", "predicted_value", "lower_bound", "upper_bound"]
+WINNING_SCORE_COLUMNS = [
+    "source",
+    "competitor_id",
+    "ad_ref_id",
+    "days_running",
+    "variant_count",
+    "score",
+    "rationale",
+]
+
+
 @st.cache_data(ttl=300)
 def load_competitors_df() -> pd.DataFrame:
     session = db_session()
     rows = session.query(Competitor).all()
-    return pd.DataFrame(
-        [{"id": c.id, "name": c.name, "country": c.country, "is_own_brand": c.is_own_brand, "notes": c.notes} for c in rows]
+    return _rows_to_df(
+        [{"id": c.id, "name": c.name, "country": c.country, "is_own_brand": c.is_own_brand, "notes": c.notes} for c in rows],
+        COMPETITOR_COLUMNS,
     )
 
 
@@ -34,7 +93,7 @@ def load_competitors_df() -> pd.DataFrame:
 def load_meta_ads_df() -> pd.DataFrame:
     session = db_session()
     rows = session.query(MetaAd).all()
-    return pd.DataFrame(
+    return _rows_to_df(
         [
             {
                 "id": a.id,
@@ -48,7 +107,8 @@ def load_meta_ads_df() -> pd.DataFrame:
                 "last_seen_at": a.last_seen_at,
             }
             for a in rows
-        ]
+        ],
+        META_AD_COLUMNS,
     )
 
 
@@ -56,7 +116,7 @@ def load_meta_ads_df() -> pd.DataFrame:
 def load_tiktok_ads_df() -> pd.DataFrame:
     session = db_session()
     rows = session.query(TikTokAd).all()
-    return pd.DataFrame(
+    return _rows_to_df(
         [
             {
                 "id": a.id,
@@ -71,7 +131,8 @@ def load_tiktok_ads_df() -> pd.DataFrame:
                 "last_seen_at": a.last_seen_at,
             }
             for a in rows
-        ]
+        ],
+        TIKTOK_AD_COLUMNS,
     )
 
 
@@ -79,7 +140,7 @@ def load_tiktok_ads_df() -> pd.DataFrame:
 def load_own_insights_df() -> pd.DataFrame:
     session = db_session()
     rows = session.query(OwnAdInsight).all()
-    return pd.DataFrame(
+    return _rows_to_df(
         [
             {
                 "date": r.date,
@@ -95,7 +156,8 @@ def load_own_insights_df() -> pd.DataFrame:
                 "roas": r.roas,
             }
             for r in rows
-        ]
+        ],
+        OWN_INSIGHT_COLUMNS,
     )
 
 
@@ -103,7 +165,7 @@ def load_own_insights_df() -> pd.DataFrame:
 def load_predictions_df() -> pd.DataFrame:
     session = db_session()
     rows = session.query(Prediction).all()
-    return pd.DataFrame(
+    return _rows_to_df(
         [
             {
                 "metric_name": p.metric_name,
@@ -113,7 +175,8 @@ def load_predictions_df() -> pd.DataFrame:
                 "upper_bound": p.upper_bound,
             }
             for p in rows
-        ]
+        ],
+        PREDICTION_COLUMNS,
     )
 
 
@@ -121,7 +184,7 @@ def load_predictions_df() -> pd.DataFrame:
 def load_winning_scores_df() -> pd.DataFrame:
     session = db_session()
     rows = session.query(WinningCreativeScore).all()
-    return pd.DataFrame(
+    return _rows_to_df(
         [
             {
                 "source": s.source,
@@ -133,5 +196,6 @@ def load_winning_scores_df() -> pd.DataFrame:
                 "rationale": s.rationale,
             }
             for s in rows
-        ]
+        ],
+        WINNING_SCORE_COLUMNS,
     )
