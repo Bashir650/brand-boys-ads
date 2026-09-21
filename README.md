@@ -29,23 +29,39 @@ A code-based, API-driven competitive intelligence dashboard:
 
 ## Read this before you start: what the APIs actually give you
 
-**Meta Ad Library API (competitor ads)** is public and free, but for ordinary
-commercial ads (`ad_type=ALL`) Meta does **not** expose spend or impressions -
-only the ad creative, dates, and page info. Spend/impressions are only
-populated for `POLITICAL_AND_ISSUE_ADS`, and only in a handful of countries.
-This is a deliberate restriction on Meta's side, not something this project
-can work around. Because of that, "winning creative" for competitors is
-inferred from **how long an ad keeps running** and **how many near-duplicate
-variants are live at once** (see `src/analysis/winning_creative_score.py`) -
-a widely used proxy, not real performance data.
+**Meta Ad Library API's `/ads_archive` endpoint (competitor ads) is far more
+restricted than it first appears - read this carefully, it changes what you
+can expect from the "Competitor Ads Library" page.** For `ad_type=ALL`
+(ordinary commercial ads), Meta only returns results for ads that reached
+the **EU/UK**. Outside the EU/UK, the API returns data *only* for ads tagged
+`POLITICAL_AND_ISSUE_ADS`. This isn't a permissions gap or something a token
+or identity verification unlocks - it's a deliberate restriction on which
+data the API exposes at all, tied to EU transparency regulation (the DSA).
+If your tracked brands run ordinary product ads targeted at, say, India or
+the US and don't reach the EU, **the automated API pull will legitimately
+return nothing for them, and that's expected, not a bug.**
 
-**You may need to complete Meta's identity verification before the Ad
-Library API will return anything**, even with a valid token. If a pipeline
-run logs `Application does not have permission for this action` /
-`error_subcode: 2332002`, that's Meta telling you this directly - the error
-message itself links to the steps: facebook.com/ads/library/api. This is an
-account-level requirement on Meta's side (independent of your app's
-Development Mode status) and nothing in this codebase can bypass it.
+The Ad Library API also separately requires completing Meta's identity/
+business verification before it returns anything at all (a run logging
+`Application does not have permission for this action` /
+`error_subcode: 2332002` is Meta telling you this - the error links to
+facebook.com/ads/library/api). That verification is necessary but **not
+sufficient** for non-EU commercial ads - it only gets you past the identity
+check, not past the EU-only restriction above.
+
+**Practical fallback**: the Ad Library *website* (facebook.com/ads/library)
+shows all of a Page's ads regardless of country - it's a public transparency
+requirement for every advertiser, unlike the API's narrower `ads_archive`
+endpoint. The "Competitor Ads Library" dashboard page links directly to each
+tracked brand's Ad Library search so you can browse manually even when the
+automated pull returns nothing.
+
+Because of both restrictions, "winning creative" for competitors is
+inferred from **how long an ad keeps running** and **how many near-duplicate
+variants are live at once** (see `src/analysis/winning_creative_score.py`)
+for whatever the API *does* return (EU/UK-reaching or political ads) - a
+widely used proxy, not real performance data, and only covers a subset of
+what you can see by browsing the website directly.
 
 **Meta Marketing API (your own account)** gives you everything - spend,
 impressions, CTR, ROAS, etc. - because it's your own data.

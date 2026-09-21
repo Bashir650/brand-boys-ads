@@ -3,12 +3,44 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from urllib.parse import urlencode
+
 import pandas as pd
 import streamlit as st
 
+from src.config import settings
 from src.db.base import Base, engine
 from src.db.models import Competitor, MetaAd, OwnAdInsight, Prediction, TikTokAd, WinningCreativeScore
 from src.db.session import get_session
+
+
+def meta_ad_library_browse_url(name: str, meta_page_id: str | None, meta_search_terms: str | None) -> str:
+    """A direct link to browse this brand's ads on the public Ad Library
+    *website* (facebook.com/ads/library) rather than the API. The website
+    shows all of a Page's ads regardless of country - it's the API's
+    ads_archive endpoint specifically that only returns ad_type=ALL results
+    for ads reaching the EU/UK (see README). This is the practical fallback
+    for brands our automated pull can't reach.
+    """
+    # A DataFrame column with mixed None/string values can surface missing
+    # entries as float NaN rather than None - `if meta_page_id:` treats NaN
+    # as truthy, so check emptiness with pd.notna() instead.
+    has_page_id = meta_page_id is not None and pd.notna(meta_page_id) and str(meta_page_id).strip()
+    has_search_terms = meta_search_terms is not None and pd.notna(meta_search_terms) and str(meta_search_terms).strip()
+
+    base = "https://www.facebook.com/ads/library/"
+    if has_page_id:
+        params = {"active_status": "all", "ad_type": "all", "view_all_page_id": str(meta_page_id)}
+    else:
+        country = (settings.ad_library_countries or ["US"])[0]
+        params = {
+            "active_status": "all",
+            "ad_type": "all",
+            "country": country,
+            "q": str(meta_search_terms) if has_search_terms else name,
+            "search_type": "keyword_unordered",
+        }
+    return f"{base}?{urlencode(params)}"
 
 
 @st.cache_resource
@@ -30,7 +62,7 @@ def _rows_to_df(rows: list[dict], columns: list[str]) -> pd.DataFrame:
     return pd.DataFrame(rows, columns=columns)
 
 
-COMPETITOR_COLUMNS = ["id", "name", "country", "is_own_brand", "notes"]
+COMPETITOR_COLUMNS = ["id", "name", "meta_page_id", "meta_search_terms", "country", "is_own_brand", "notes"]
 META_AD_COLUMNS = [
     "id",
     "competitor_id",
@@ -84,7 +116,18 @@ def load_competitors_df() -> pd.DataFrame:
     session = db_session()
     rows = session.query(Competitor).all()
     return _rows_to_df(
-        [{"id": c.id, "name": c.name, "country": c.country, "is_own_brand": c.is_own_brand, "notes": c.notes} for c in rows],
+        [
+            {
+                "id": c.id,
+                "name": c.name,
+                "meta_page_id": c.meta_page_id,
+                "meta_search_terms": c.meta_search_terms,
+                "country": c.country,
+                "is_own_brand": c.is_own_brand,
+                "notes": c.notes,
+            }
+            for c in rows
+        ],
         COMPETITOR_COLUMNS,
     )
 
