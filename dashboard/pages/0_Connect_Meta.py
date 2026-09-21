@@ -34,27 +34,50 @@ if not settings.meta_app_id or not settings.meta_app_secret:
     st.error("Set META_APP_ID and META_APP_SECRET in your .env file first.")
     st.stop()
 
-existing = load_token()
-if existing:
-    st.success("A Meta access token is already saved locally (secrets/meta_token.json).")
-
 query_params = st.query_params
 code = query_params.get("code")
 
-if code:
+if code and "just_connected_token" not in st.session_state:
     with st.spinner("Exchanging code for a long-lived token..."):
         try:
-            token_data = exchange_code_for_token(code)
-            days_valid = token_data.get("expires_in", 0) // 86400
-            st.success(f"Connected! Token valid for about {days_valid} days.")
-            st.query_params.clear()
+            st.session_state["just_connected_token"] = exchange_code_for_token(code)
         except Exception as exc:
             st.error(f"Token exchange failed: {exc}")
+    st.query_params.clear()
+
+if "just_connected_token" in st.session_state:
+    token_data = st.session_state["just_connected_token"]
+    days_valid = token_data.get("expires_in", 0) // 86400
+    st.success(f"Connected! Token valid for about {days_valid} days.")
+    st.warning(
+        "**Copy this token now - it won't be shown again.** On a host with ephemeral "
+        "storage (like Streamlit Community Cloud), the local copy in "
+        "`secrets/meta_token.json` does NOT survive an app reboot/redeploy - this box "
+        "is the only place you'll see the raw value. Don't screenshot or share it."
+    )
+    st.code(token_data["access_token"], language=None)
+    st.markdown(
+        "Paste it into **both** places so it survives reboots:\n"
+        "- Streamlit Cloud app -> **⋮ menu -> Settings -> Secrets**, as `META_ACCESS_TOKEN`\n"
+        "- This GitHub repo -> **Settings -> Secrets and variables -> Actions**, as the "
+        "`META_ACCESS_TOKEN` repository secret (so the scheduled pipeline can use it too)"
+    )
+    if st.button("I've copied it - hide this token"):
+        del st.session_state["just_connected_token"]
+        st.rerun()
+elif load_token():
+    st.success(
+        "A Meta access token is saved locally for this running session "
+        "(secrets/meta_token.json). If you've since rebooted the app, this may be "
+        "stale - reconnect below if pages that need it show errors."
+    )
+    st.link_button("Reconnect with Facebook", build_authorize_url())
 else:
     st.link_button("Connect with Facebook", build_authorize_url())
 
 st.caption(
-    "The token is stored locally in secrets/meta_token.json (gitignored) - never commit "
-    "it. For the scheduled GitHub Action, put the long-lived token in the "
-    "META_ACCESS_TOKEN repository secret instead (see README)."
+    "For local development, the token is also cached in secrets/meta_token.json "
+    "(gitignored - never commit it). For the scheduled GitHub Action and for any host "
+    "with ephemeral storage, the META_ACCESS_TOKEN secret shown above is the source of "
+    "truth (see README)."
 )
