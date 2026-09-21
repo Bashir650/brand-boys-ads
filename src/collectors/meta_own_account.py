@@ -64,7 +64,12 @@ class MetaMarketingClient:
         }
         results: list[dict] = []
         while url:
-            resp = requests.get(url, params=params if not results else None, timeout=30)
+            # Ad-level daily insights over a full month can take Meta noticeably
+            # longer to compute server-side than most Graph API calls - 30s was
+            # too tight and caused ReadTimeout on real accounts. 120s gives it
+            # room; this still fails loudly (caught by run_own_account_pull)
+            # rather than hanging indefinitely.
+            resp = requests.get(url, params=params if not results else None, timeout=120)
             if resp.status_code != 200:
                 raise MetaMarketingError(f"Marketing API error {resp.status_code}: {resp.text[:500]}")
             payload = resp.json()

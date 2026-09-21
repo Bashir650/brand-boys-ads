@@ -39,6 +39,14 @@ inferred from **how long an ad keeps running** and **how many near-duplicate
 variants are live at once** (see `src/analysis/winning_creative_score.py`) -
 a widely used proxy, not real performance data.
 
+**You may need to complete Meta's identity verification before the Ad
+Library API will return anything**, even with a valid token. If a pipeline
+run logs `Application does not have permission for this action` /
+`error_subcode: 2332002`, that's Meta telling you this directly - the error
+message itself links to the steps: facebook.com/ads/library/api. This is an
+account-level requirement on Meta's side (independent of your app's
+Development Mode status) and nothing in this codebase can bypass it.
+
 **Meta Marketing API (your own account)** gives you everything - spend,
 impressions, CTR, ROAS, etc. - because it's your own data.
 
