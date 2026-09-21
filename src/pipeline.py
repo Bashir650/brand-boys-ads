@@ -53,7 +53,11 @@ def run_meta_competitor_pull(session, competitors: list[Competitor]) -> int | No
 
     total = 0
     for competitor in competitors:
-        if competitor.is_own_brand or not (competitor.meta_page_id or competitor.meta_search_terms):
+        # Note: is_own_brand is NOT excluded here - the Ad Library is public
+        # data for any page, including your own, so your brand's ads show up
+        # in the library view alongside competitors. is_own_brand only gates
+        # the winning-creative scoring below (see run_analysis).
+        if not (competitor.meta_page_id or competitor.meta_search_terms):
             continue
         try:
             count = sync_competitor_ads(session, competitor, client, settings.ad_library_countries)
@@ -71,8 +75,7 @@ def run_tiktok_pull(session, competitors: list[Competitor]) -> int | None:
         return None
     total = 0
     for competitor in competitors:
-        if competitor.is_own_brand:
-            continue
+        # Same reasoning as run_meta_competitor_pull: don't exclude own brand.
         try:
             count = sync_competitor_tiktok_ads(session, competitor)
             total += count

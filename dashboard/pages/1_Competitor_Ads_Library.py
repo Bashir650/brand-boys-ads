@@ -9,10 +9,9 @@ from dashboard.utils import load_competitors_df, load_meta_ads_df, load_tiktok_a
 
 st.set_page_config(page_title="Competitor Ads Library", layout="wide")
 st.title("Competitor Ads Library")
+st.caption("Includes your own brand alongside competitors - the Ad Library is public data for any page.")
 
 competitors = load_competitors_df()
-if not competitors.empty:
-    competitors = competitors[~competitors["is_own_brand"]]
 meta_ads = load_meta_ads_df()
 tiktok_ads = load_tiktok_ads_df()
 
@@ -20,11 +19,13 @@ if competitors.empty:
     st.info("Add competitors to config/competitors.yaml, then run the pipeline.")
     st.stop()
 
-name_by_id = dict(zip(competitors["id"], competitors["name"]))
-selected = st.multiselect(
-    "Competitors", options=competitors["name"].tolist(), default=competitors["name"].tolist()
-)
-selected_ids = competitors[competitors["name"].isin(selected)]["id"].tolist()
+# Label own brand distinctly in the picker without changing the underlying name used to join.
+display_name = {
+    row.id: f"{row.name} (your brand)" if row.is_own_brand else row.name for row in competitors.itertuples()
+}
+options = [display_name[i] for i in competitors["id"]]
+selected_display = st.multiselect("Brands", options=options, default=options)
+selected_ids = [i for i in competitors["id"] if display_name[i] in selected_display]
 
 tab_meta, tab_tiktok = st.tabs(["Meta (Facebook/Instagram) Ads", "TikTok Ads"])
 
@@ -33,7 +34,7 @@ with tab_meta:
     if df.empty:
         st.info("No Meta ads captured yet for the selected competitors.")
     else:
-        df["competitor"] = df["competitor_id"].map(name_by_id)
+        df["competitor"] = df["competitor_id"].map(display_name)
         df["still_running"] = df["ad_delivery_stop_time"].isna()
         st.dataframe(
             df[
@@ -47,7 +48,7 @@ with tab_meta:
                     "ad_snapshot_url",
                 ]
             ].sort_values("ad_delivery_start_time", ascending=False),
-            use_container_width=True,
+            width='stretch',
             hide_index=True,
         )
 
@@ -60,11 +61,11 @@ with tab_tiktok:
             "needs updating - see src/collectors/tiktok_creative_center.py."
         )
     else:
-        df["competitor"] = df["competitor_id"].map(name_by_id)
+        df["competitor"] = df["competitor_id"].map(display_name)
         st.dataframe(
             df[["competitor", "brand_name", "caption", "likes", "comments", "shares", "video_url"]].sort_values(
                 "likes", ascending=False
             ),
-            use_container_width=True,
+            width='stretch',
             hide_index=True,
         )

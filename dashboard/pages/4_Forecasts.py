@@ -64,4 +64,4 @@ fig.add_trace(
     )
 )
 fig.update_layout(title=f"{metric}: actual vs forecast", yaxis_title=metric, xaxis_title="")
-st.plotly_chart(fig, use_container_width=True)
+st.plotly_chart(fig, width='stretch')

@@ -43,7 +43,7 @@ fig = px.bar(
     title="Top 30 highest-scoring competitor creatives",
 )
 fig.update_layout(yaxis_title="", xaxis_title="Winning-creative score", legend_title="Competitor")
-st.plotly_chart(fig, use_container_width=True)
+st.plotly_chart(fig, width='stretch')
 
 st.subheader("Reused creatives (likely dupes / templates being scaled)")
 dupes = scores[scores["variant_count"] > 1].sort_values("variant_count", ascending=False)
@@ -52,6 +52,6 @@ if dupes.empty:
 else:
     st.dataframe(
         dupes[["competitor", "ad_ref_id", "variant_count", "days_running", "rationale"]],
-        use_container_width=True,
+        width='stretch',
         hide_index=True,
     )

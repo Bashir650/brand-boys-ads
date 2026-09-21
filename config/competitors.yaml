@@ -1,6 +1,11 @@
 # Add one entry per competitor / prospect brand you want to track, plus one
-# entry for your own brand (is_own_brand: true) so the pipeline knows which
-# row to skip for competitor scraping.
+# entry for your own brand (is_own_brand: true). Every entry - own brand
+# included - gets pulled from the public Ad Library the same way; is_own_brand
+# only controls two things: it's excluded from "winning creative" scoring
+# (scoring your own ads against that heuristic isn't useful - you already have
+# real performance data for them via the Marketing API), and it's the row
+# used to interpret META_AD_ACCOUNT_ID's performance data as "yours" in the
+# dashboard.
 #
 # meta_page_id: numeric Facebook Page ID. Find it via Graph API Explorer:
 #   GET /<page-username>?fields=id  (or view page source, search "page_id")
@@ -24,8 +29,8 @@ competitors:
     meta_search_terms: "XYXX"
     tiktok_handle: ""
     country: "IN"
-    is_own_brand: false
-    notes: "direct competitor"
+    is_own_brand: true
+    notes: "own brand - shown in the Ad Library view (public data) AND pulled via Marketing API using META_AD_ACCOUNT_ID"
 
   - name: "BlissClub"
     meta_page_id: ""
@@ -42,11 +47,3 @@ competitors:
     country: "IN"
     is_own_brand: false
     notes: "direct competitor"
-
-  - name: "Our Brand"
-    meta_page_id: ""
-    meta_search_terms: ""
-    tiktok_handle: ""
-    country: "IN"
-    is_own_brand: true
-    notes: "own brand - performance pulled via Marketing API, not Ad Library"
