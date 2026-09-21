@@ -50,7 +50,14 @@ class MetaMarketingClient:
         if not self.access_token or not self.ad_account_id:
             raise MetaMarketingError("META_ACCESS_TOKEN and META_AD_ACCOUNT_ID must both be configured")
 
-    def fetch_daily_insights(self, days_back: int = 30) -> list[dict]:
+    def fetch_daily_insights(self, days_back: int = 7) -> list[dict]:
+        # A full month of ad-level data broken down by day in one request was
+        # observed taking ~4 minutes and then failing with a generic Meta-side
+        # error (500 / subcode 99, "An unknown error occurred") - too heavy a
+        # query, not a permissions or timeout issue. A week is lighter and
+        # still builds up 10+ days of history within a few days of the
+        # pipeline running daily (rows are upserted, not replaced), which is
+        # all forecasting.py needs.
         until = datetime.date.today()
         since = until - datetime.timedelta(days=days_back)
         url = GRAPH_URL_TMPL.format(version=self.api_version, ad_account_id=self.ad_account_id)
@@ -85,7 +92,7 @@ def _extract_action_value(actions: list[dict] | None, action_types: set[str]) ->
     return sum(float(a.get("value", 0)) for a in actions if a.get("action_type") in action_types)
 
 
-def sync_own_insights(session, client: MetaMarketingClient, days_back: int = 30) -> int:
+def sync_own_insights(session, client: MetaMarketingClient, days_back: int = 7) -> int:
     rows = client.fetch_daily_insights(days_back=days_back)
     upserted = 0
     for row in rows:
