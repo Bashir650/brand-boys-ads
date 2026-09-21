@@ -11,9 +11,33 @@
 #   (the same collectors double as lead-gen: any brand running lots of ads for
 #   months in the Ad Library is spending real budget and is a warm lead).
 competitors:
-  - name: "Example Competitor 1"
+  - name: "DaMENSCH"
     meta_page_id: ""
-    meta_search_terms: "Example Competitor 1"
+    meta_search_terms: "DaMENSCH"
+    tiktok_handle: ""
+    country: "IN"
+    is_own_brand: false
+    notes: "direct competitor"
+
+  - name: "XYXX"
+    meta_page_id: ""
+    meta_search_terms: "XYXX"
+    tiktok_handle: ""
+    country: "IN"
+    is_own_brand: false
+    notes: "direct competitor"
+
+  - name: "BlissClub"
+    meta_page_id: ""
+    meta_search_terms: "BlissClub"
+    tiktok_handle: ""
+    country: "IN"
+    is_own_brand: false
+    notes: "direct competitor"
+
+  - name: "Pant Project"
+    meta_page_id: ""
+    meta_search_terms: "Pant Project"
     tiktok_handle: ""
     country: "IN"
     is_own_brand: false
